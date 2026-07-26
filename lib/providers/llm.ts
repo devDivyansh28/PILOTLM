@@ -5,7 +5,7 @@ import { getLLMConfig, getAPIKey } from './registry';
 
 export function createLLM(configName?: string): BaseChatModel {
   const config = getLLMConfig(configName);
-  const apiKey = getAPIKey(config.apiKeyEnv);
+  const apiKey = config.apiKeyEnv ? getAPIKey(config.apiKeyEnv) : undefined;
 
   switch (config.provider) {
     case 'openai':

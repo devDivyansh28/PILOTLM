@@ -63,7 +63,9 @@ function loadConfig(): ProviderConfig {
 
   const configPath = path.join(process.cwd(), 'config', 'providers.yaml');
   const fileContents = fs.readFileSync(configPath, 'utf8');
-  configCache = yaml.parse(fileContents);
+  const parsed = yaml.parse(fileContents);
+  if (!parsed) throw new Error('Failed to parse providers.yaml');
+  configCache = parsed as ProviderConfig;
   return configCache;
 }
 

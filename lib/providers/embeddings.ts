@@ -5,7 +5,7 @@ import { getEmbeddingConfig, getAPIKey } from './registry';
 
 export function createEmbeddings(configName?: string): Embeddings {
   const config = getEmbeddingConfig(configName);
-  const apiKey = getAPIKey(config.apiKeyEnv);
+  const apiKey = config.apiKeyEnv ? getAPIKey(config.apiKeyEnv) : undefined;
 
   switch (config.provider) {
     case 'openai':
