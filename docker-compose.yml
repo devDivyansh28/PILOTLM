@@ -26,31 +26,6 @@ services:
       QDRANT__SERVICE__HTTP_PORT: 6333
       QDRANT__SERVICE__GRPC_PORT: 6334
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: pilotlm-app
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: postgresql://pilotlm:pilotlm@postgres:5432/pilotlm
-      REDIS_URL: redis://redis:6379
-      QDRANT_URL: http://qdrant:6333
-      NODE_ENV: development
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
-    command: pnpm dev
-
 volumes:
   redis_data:
   qdrant_data:
