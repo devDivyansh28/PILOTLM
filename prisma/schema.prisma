@@ -92,12 +92,14 @@ model Source {
 model SourceChunk {
   id              String   @id @default(cuid())
   sourceId        String
-  content         String   @db.Text
-  embedding       Float[]
-  metadata        Json?
   qdrantPointId   String   @unique
+  chunkIndex      Int
+  charRange       Json?
+  metadata        Json?
   createdAt       DateTime @default(now())
   source          Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId])
 }
 
 model Job {
