@@ -1,6 +1,7 @@
 import { Embeddings } from '@langchain/core/embeddings';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { CohereEmbeddings } from '@langchain/cohere';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { getEmbeddingConfig, getAPIKey } from './registry';
 
 export function createEmbeddings(configName?: string): Embeddings {
@@ -18,6 +19,12 @@ export function createEmbeddings(configName?: string): Embeddings {
     case 'cohere':
       return new CohereEmbeddings({
         model: config.model,
+        apiKey: apiKey,
+      });
+
+    case 'google':
+      return new GoogleGenerativeAIEmbeddings({
+        modelName: config.model,
         apiKey: apiKey,
       });
 

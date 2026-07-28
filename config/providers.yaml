@@ -1,6 +1,6 @@
 # Multi-Provider Configuration
 # All LLM, embedding, and reranker models configured here
-# Supports: OpenAI, Anthropic, Cohere, Ollama, HuggingFace
+# Supports: OpenAI, Anthropic, Google, Cohere, Ollama, HuggingFace
 
 # Default provider for each capability
 defaults:
@@ -51,6 +51,27 @@ llm:
     temperature: 0.1
     maxTokens: 4096
     apiKeyEnv: HUGGINGFACE_API_KEY
+  
+  google-gemini-1.5-pro:
+    provider: google
+    model: gemini-1.5-pro
+    temperature: 0.1
+    maxTokens: 8192
+    apiKeyEnv: GOOGLE_API_KEY
+  
+  google-gemini-1.5-flash:
+    provider: google
+    model: gemini-1.5-flash
+    temperature: 0.1
+    maxTokens: 8192
+    apiKeyEnv: GOOGLE_API_KEY
+  
+  google-gemini-1.0-pro:
+    provider: google
+    model: gemini-1.0-pro
+    temperature: 0.1
+    maxTokens: 30720
+    apiKeyEnv: GOOGLE_API_KEY
 
 # Embedding Providers
 embedding:
@@ -77,6 +98,12 @@ embedding:
     model: nomic-embed-text
     dimensions: 768
     baseUrl: http://localhost:11434
+  
+  google-embedding-001:
+    provider: google
+    model: text-embedding-004
+    dimensions: 768
+    apiKeyEnv: GOOGLE_API_KEY
 
 # Reranker Providers
 reranker:

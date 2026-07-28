@@ -1,6 +1,7 @@
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { getLLMConfig, getAPIKey } from './registry';
 
 export function createLLM(configName?: string): BaseChatModel {
@@ -24,6 +25,15 @@ export function createLLM(configName?: string): BaseChatModel {
         temperature: config.temperature,
         maxTokens: config.maxTokens,
         anthropicApiKey: apiKey,
+        streaming: true,
+      });
+
+    case 'google':
+      return new ChatGoogleGenerativeAI({
+        model: config.model,
+        temperature: config.temperature,
+        maxOutputTokens: config.maxTokens,
+        apiKey: apiKey,
         streaming: true,
       });
 

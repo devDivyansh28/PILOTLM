@@ -17,7 +17,7 @@ export interface ProviderConfig {
 }
 
 export interface LLMConfig {
-  provider: 'openai' | 'anthropic' | 'ollama' | 'huggingface';
+  provider: 'openai' | 'anthropic' | 'ollama' | 'huggingface' | 'google';
   model: string;
   temperature: number;
   maxTokens: number;
@@ -26,7 +26,7 @@ export interface LLMConfig {
 }
 
 export interface EmbeddingConfig {
-  provider: 'openai' | 'cohere' | 'ollama';
+  provider: 'openai' | 'cohere' | 'ollama' | 'google';
   model: string;
   dimensions: number;
   apiKeyEnv?: string;

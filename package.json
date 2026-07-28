@@ -15,6 +15,7 @@
     "@langchain/cohere": "^1.1.0",
     "@langchain/community": "^1.1.29",
     "@langchain/core": "^1.2.3",
+    "@langchain/google-genai": "^2.2.0",
     "@langchain/openai": "^1.5.5",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
