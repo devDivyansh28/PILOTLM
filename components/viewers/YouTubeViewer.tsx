@@ -17,10 +17,11 @@ interface YouTubeViewerProps {
 
 export function YouTubeViewer({ src, title, onClose, citation }: YouTubeViewerProps) {
   const [fullscreen] = React.useState(false);
+  const playerRef = React.useRef<ReactPlayer>(null);
 
   React.useEffect(() => {
-    if (citation?.timestamp) {
-      // ReactPlayer will handle seeking via the ref
+    if (citation?.timestamp && playerRef.current) {
+      playerRef.current.seekTo(citation.timestamp, "seconds");
     }
   }, [citation]);
 
@@ -37,6 +38,7 @@ export function YouTubeViewer({ src, title, onClose, citation }: YouTubeViewerPr
 
       <div className="flex-1 flex items-center justify-center p-4">
         <ReactPlayer
+          ref={playerRef}
           src={src}
           width="100%"
           height="100%"

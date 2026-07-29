@@ -90,6 +90,9 @@ export async function getNotebook(notebookId: string) {
     include: {
       sources: {
         orderBy: { createdAt: "desc" },
+        include: {
+          _count: { select: { chunks: true } },
+        },
       },
       chats: {
         orderBy: { updatedAt: "desc" },

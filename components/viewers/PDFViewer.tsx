@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Maximize2, Minimize2, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { X, ZoomIn, ZoomOut, Maximize2, Minimize2, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document, Page, pdfjs } from "react-pdf";
 
@@ -20,7 +20,7 @@ interface PDFViewerProps {
 export function PDFViewer({ src, title, onClose, citation }: PDFViewerProps) {
   const [numPages, setNumPages] = React.useState<number | null>(null);
   const [pageNumber, setPageNumber] = React.useState(citation?.page || 1);
-  const [scale] = React.useState(1.5);
+  const [scale, setScale] = React.useState(1.5);
   const [fullscreen, setFullscreen] = React.useState(false);
 
   const onDocumentLoadSuccess = ({ numPages: np }: { numPages: number }) => {
@@ -54,7 +54,14 @@ export function PDFViewer({ src, title, onClose, citation }: PDFViewerProps) {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setFullscreen(!fullscreen)}>
+            <Button variant="ghost" size="icon" onClick={() => setScale((s) => Math.max(0.5, s - 0.25))}>
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-xs tabular-nums w-8 text-center">{Math.round(scale * 100)}%</span>
+            <Button variant="ghost" size="icon" onClick={() => setScale((s) => Math.min(3, s + 0.25))}>
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setFullscreen(!fullscreen)}>
             {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
           <a

@@ -3,6 +3,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Document } from "@langchain/core/documents";
 import { prisma } from "@/lib/db";
 import { createEmbeddings } from "@/lib/providers/embeddings";
+import { getIngestionConfig } from "@/lib/providers/registry";
 import { upsertPoints, getCollectionName } from "@/lib/vector/qdrant";
 import { SourceStatus, JobStatus, JobType, SourceType } from "@/lib/generated/prisma/enums";
 import { v4 as uuidv4 } from "uuid";
@@ -18,14 +19,14 @@ export interface ProcessedSource {
   totalChars: number;
 }
 
-const CHUNK_SIZE = 1000;
-const CHUNK_OVERLAP = 200;
-
-const textSplitter = new RecursiveCharacterTextSplitter({
-  chunkSize: CHUNK_SIZE,
-  chunkOverlap: CHUNK_OVERLAP,
-  separators: ["\n\n", "\n", ". ", " ", ""],
-});
+function createTextSplitter() {
+  const { chunkSize, chunkOverlap } = getIngestionConfig().chunking;
+  return new RecursiveCharacterTextSplitter({
+    chunkSize,
+    chunkOverlap,
+    separators: ["\n\n", "\n", ". ", " ", ""],
+  });
+}
 
 export async function extractContent(
   sourceId: string
@@ -88,14 +89,16 @@ export async function chunkContent(
 
   const fullContent = documents.map((d) => d.pageContent).join("\n\n");
   const langchainDocs = documents.map((d) => new Document({ pageContent: d.pageContent, metadata: d.metadata }));
-  const splitDocs = await textSplitter.splitDocuments(langchainDocs);
+  const splitter = createTextSplitter();
+  const { chunkSize } = getIngestionConfig().chunking;
+  const splitDocs = await splitter.splitDocuments(langchainDocs);
 
   const chunks: ChunkData[] = splitDocs.map((doc, index) => {
     const startChar = fullContent.indexOf(doc.pageContent);
     return {
       content: doc.pageContent,
       metadata: { ...doc.metadata, chunkIndex: index },
-      charRange: { start: startChar >= 0 ? startChar : index * CHUNK_SIZE, end: startChar >= 0 ? startChar + doc.pageContent.length : (index + 1) * CHUNK_SIZE },
+      charRange: { start: startChar >= 0 ? startChar : index * chunkSize, end: startChar >= 0 ? startChar + doc.pageContent.length : (index + 1) * chunkSize },
     };
   });
 

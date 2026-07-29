@@ -13,7 +13,15 @@ export interface ProviderConfig {
   llm: Record<string, LLMConfig>;
   embedding: Record<string, EmbeddingConfig>;
   reranker: Record<string, RerankerConfig>;
+  ingestion: IngestionConfig;
   rag: RAGConfig;
+}
+
+export interface IngestionConfig {
+  chunking: {
+    chunkSize: number;
+    chunkOverlap: number;
+  };
 }
 
 export interface LLMConfig {
@@ -99,6 +107,10 @@ export function getRerankerConfig(name?: string): RerankerConfig {
 
 export function getRAGConfig(): RAGConfig {
   return loadConfig().rag;
+}
+
+export function getIngestionConfig(): IngestionConfig {
+  return loadConfig().ingestion;
 }
 
 export function getAPIKey(envVar: string): string {
