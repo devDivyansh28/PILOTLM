@@ -1,19 +1,21 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { getUploadAuthParams } from "@/lib/storage/imagekit";
-import { SourceType, SourceStatus } from "@/lib/generated/prisma/enums";
+import { SourceStatus } from "@/lib/generated/prisma/enums";
 import { ingestionQueue } from "@/lib/queue";
+import { createSourceSchema } from "@/lib/validation";
+import { ok, unauthorized, bad, serverError } from "@/lib/api-utils";
 
 const URL_BASED_TYPES = new Set(["WEBSITE", "YOUTUBE"]);
 
 export async function GET(request: Request) {
   const { userId } = await auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId) return unauthorized();
 
   try {
     const url = new URL(request.url);
     const notebookId = url.searchParams.get("notebookId");
-    if (!notebookId) return new Response("notebookId required", { status: 400 });
+    if (!notebookId) return bad("notebookId required");
 
     const sources = await prisma.source.findMany({
       where: { notebookId },
@@ -21,34 +23,31 @@ export async function GET(request: Request) {
       include: { jobs: { orderBy: { createdAt: "asc" } }, _count: { select: { chunks: true } } },
     });
 
-    return Response.json(sources);
-  } catch (error) {
-    console.error(error);
-    return new Response("Internal server error", { status: 500 });
+    return ok(sources);
+  } catch (err) {
+    return serverError(err);
   }
 }
 
 export async function POST(request: Request) {
   const { userId } = await auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId) return unauthorized();
 
   try {
     const body = await request.json();
-    const { notebookId, type, name, filePath, url, metadata } = body;
+    const parsed = createSourceSchema.safeParse(body);
+    if (!parsed.success) return bad(parsed.error.issues[0].message);
 
-    if (!notebookId || !type || !name) {
-      return new Response("notebookId, type, name required", { status: 400 });
-    }
+    const { notebookId, type, name, filePath, url } = parsed.data;
 
     const source = await prisma.source.create({
       data: {
         notebookId,
-        type: type as SourceType,
+        type,
         name,
         filePath,
-        url,
+        url: url || undefined,
         status: SourceStatus.PENDING,
-        metadata,
       },
     });
 
@@ -62,9 +61,8 @@ export async function POST(request: Request) {
 
     const authParams = getUploadAuthParams();
 
-    return Response.json({ sourceId: source.id, ...authParams });
-  } catch (error) {
-    console.error(error);
-    return new Response("Internal server error", { status: 500 });
+    return ok({ sourceId: source.id, ...authParams }, 201);
+  } catch (err) {
+    return serverError(err);
   }
 }

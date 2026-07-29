@@ -66,7 +66,7 @@ Example: `features/auth/action/onboard.ts` — Clerk user sync to Neon via Prism
 
 ## Key Files to Know
 - `prisma/schema.prisma` — Data models (User, Notebook, Source, SourceChunk, Job, Citation)
-- `lib/db.ts` — Prisma singleton (use `import { db } from '@/lib/db'`)
+- `lib/db.ts` — Prisma singleton (use `import { prisma } from '@/lib/db'`)
 - `lib/providers/` — Provider registry (OpenAI, Anthropic, Cohere, Ollama, HF)
 - `config/providers.yaml` — All model config (temperature, maxTokens, prompts)
 - `components/providers/theme-provider.tsx` — Dark mode setup

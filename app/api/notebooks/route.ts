@@ -1,32 +1,32 @@
 import { auth } from "@clerk/nextjs/server";
 import { createNotebook, listNotebooks } from "@/features/notebooks/action/notebook-actions";
+import { createNotebookSchema } from "@/lib/validation";
+import { ok, unauthorized, bad, serverError } from "@/lib/api-utils";
 
 export async function GET() {
   const { userId } = await auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId) return unauthorized();
 
   try {
     const notebooks = await listNotebooks();
-    return Response.json(notebooks);
+    return ok(notebooks);
   } catch (err) {
-    console.error("Failed to list notebooks:", err);
-    return new Response("Internal server error", { status: 500 });
+    return serverError(err);
   }
 }
 
 export async function POST(request: Request) {
   const { userId } = await auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId) return unauthorized();
 
   try {
     const body = await request.json();
-    const { title } = body;
-    if (!title?.trim()) return new Response("Title required", { status: 400 });
+    const parsed = createNotebookSchema.safeParse(body);
+    if (!parsed.success) return bad(parsed.error.issues[0].message);
 
-    const notebook = await createNotebook(title.trim());
-    return Response.json(notebook);
+    const notebook = await createNotebook(parsed.data.title.trim());
+    return ok(notebook, 201);
   } catch (err) {
-    console.error("Failed to create notebook:", err);
-    return new Response("Internal server error", { status: 500 });
+    return serverError(err);
   }
 }

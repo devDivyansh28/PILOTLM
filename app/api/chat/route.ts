@@ -4,42 +4,32 @@ import { runRetrieval, formatContextForGeneration, extractCitationsFromAnswer } 
 import { createLLM } from '@/lib/providers/llm';
 import { formatPrompt, getRAGStepPrompt } from '@/lib/rag/prompts';
 import { Prisma } from '@/lib/generated/prisma/client';
+import { chatRequestSchema } from '@/lib/validation';
+import { bad, unauthorized, serverError } from '@/lib/api-utils';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    if (!userId) return unauthorized();
 
     const body = await request.json();
-    const { notebookId, query, chatId } = body;
+    const parsed = chatRequestSchema.safeParse(body);
+    if (!parsed.success) return bad(parsed.error.issues[0].message);
 
-    if (!notebookId || !query) {
-      return new Response('Missing notebookId or query', { status: 400 });
-    }
+    const { notebookId, query, chatId } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (!user) {
-      return new Response('User not found', { status: 404 });
-    }
+    if (!user) return bad('User not found', 404);
 
-    const notebook = await prisma.notebook.findUnique({
-      where: { id: notebookId },
-    });
-
-    if (!notebook || notebook.userId !== user.id) {
-      return new Response('Notebook not found or access denied', { status: 403 });
-    }
+    const notebook = await prisma.notebook.findUnique({ where: { id: notebookId } });
+    if (!notebook || notebook.userId !== user.id) return bad('Notebook not found or access denied', 403);
 
     let chat;
     if (chatId) {
       chat = await prisma.chat.findUnique({ where: { id: chatId } });
-      if (!chat || chat.notebookId !== notebookId) {
-        return new Response('Chat not found', { status: 404 });
-      }
+      if (!chat || chat.notebookId !== notebookId) return bad('Chat not found', 404);
     } else {
       chat = await prisma.chat.create({
         data: {
@@ -50,18 +40,12 @@ export async function POST(request: Request) {
     }
 
     await prisma.message.create({
-      data: {
-        chatId: chat.id,
-        role: 'user',
-        content: query,
-      },
+      data: { chatId: chat.id, role: 'user', content: query },
     });
 
-    // Run retrieval synchronously (steps 1-7)
     const { reranked } = await runRetrieval(notebookId, query);
     const contextStr = formatContextForGeneration(reranked);
 
-    // Stream generation via SSE
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -84,10 +68,8 @@ export async function POST(request: Request) {
             }
           }
 
-          // Extract citations from complete answer
           const citations = extractCitationsFromAnswer(fullAnswer, reranked);
 
-          // Save assistant message with citations
           const assistantMessage = await prisma.message.create({
             data: {
               chatId: chat.id,
@@ -135,6 +117,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Chat API error:', error);
-    return new Response('Internal server error', { status: 500 });
+    return serverError(error);
   }
 }
