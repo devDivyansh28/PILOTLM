@@ -64,20 +64,21 @@ export async function deleteFile(fileId: string): Promise<void> {
   await ik.deleteFile(fileId);
 }
 
-export function getSignedUploadUrl(
-  fileName: string,
-  folder: string = '/sources',
+export interface UploadAuthParams {
+  signature: string;
+  token: string;
+  expire: number;
+  publicKey: string;
+}
+
+export function getUploadAuthParams(
   expireMinutes: number = 30
-): { signedUrl: string; expire: number; token: string } {
+): UploadAuthParams {
   const ik = getImageKit();
-  
-  const authenticateParams = ik.getAuthenticationParameters(String(expireMinutes * 60));
-  
-  return {
-    signedUrl: `${process.env.IMAGEKIT_URL_ENDPOINT}${folder}/${fileName}`,
-    expire: authenticateParams.expire,
-    token: authenticateParams.token,
-  };
+  const expire = Math.floor(Date.now() / 1000) + expireMinutes * 60;
+  const { token, signature } = ik.getAuthenticationParameters(undefined, expire);
+  const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY!;
+  return { signature, token, expire, publicKey };
 }
 
 export function getPublicUrl(filePath: string): string {

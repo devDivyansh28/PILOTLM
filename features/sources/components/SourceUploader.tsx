@@ -83,25 +83,34 @@ export function SourceUploader({ notebookId, onClose }: SourceUploaderProps) {
           }),
         });
 
-        const { sourceId, signedUrl } = await uploadRes.json();
-        if (!uploadRes.ok) throw new Error("Failed to get upload URL");
+        const { sourceId, signature, token, expire, publicKey } = await uploadRes.json();
+        if (!uploadRes.ok || !sourceId) throw new Error("Failed to get upload params");
 
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("fileName", file.name);
+        formData.append("publicKey", publicKey);
+        formData.append("signature", signature);
+        formData.append("expire", String(expire));
+        formData.append("token", token);
+        formData.append("useUniqueFileName", "true");
 
-        const uploadResponse = await fetch(signedUrl, {
+        const ikResponse = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
           method: "POST",
           body: formData,
         });
 
-        if (!uploadResponse.ok) throw new Error("File upload failed");
+        if (!ikResponse.ok) throw new Error("File upload failed");
+
+        const ikResult = await ikResponse.json();
 
         const completeRes = await fetch(`/api/sources/${sourceId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "completeUpload",
-            filePath: file.name,
+            filePath: ikResult.filePath,
+            metadata: { url: ikResult.url, fileId: ikResult.fileId },
           }),
         });
 

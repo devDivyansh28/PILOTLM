@@ -1,8 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
-import { getSignedUploadUrl } from "@/lib/storage/imagekit";
+import { getUploadAuthParams } from "@/lib/storage/imagekit";
 import { SourceType, SourceStatus } from "@/lib/generated/prisma/enums";
 import { ingestionQueue } from "@/lib/queue";
+
+const URL_BASED_TYPES = new Set(["WEBSITE", "YOUTUBE"]);
 
 export async function GET(request: Request) {
   const { userId } = await auth();
@@ -21,6 +23,7 @@ export async function GET(request: Request) {
 
     return Response.json(sources);
   } catch (error) {
+    console.error(error);
     return new Response("Internal server error", { status: 500 });
   }
 }
@@ -49,17 +52,19 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create job records
-    const jobTypes = ["EXTRACT", "CHUNK", "EMBED", "STORE", "INDEX"] as const;
-    await prisma.job.createMany({
-      data: jobTypes.map((jt) => ({ sourceId: source.id, type: jt, status: "PENDING" })),
-    });
+    if (URL_BASED_TYPES.has(type)) {
+      const jobTypes = ["EXTRACT", "CHUNK", "EMBED", "STORE", "INDEX"] as const;
+      await prisma.job.createMany({
+        data: jobTypes.map((jt) => ({ sourceId: source.id, type: jt, status: "PENDING" })),
+      });
+      await ingestionQueue.add("extract", { sourceId: source.id, jobType: "EXTRACT" });
+    }
 
-    // Enqueue first job
-    await ingestionQueue.add("extract", { sourceId: source.id, jobType: "EXTRACT" });
+    const authParams = getUploadAuthParams();
 
-    return Response.json(source);
+    return Response.json({ sourceId: source.id, ...authParams });
   } catch (error) {
+    console.error(error);
     return new Response("Internal server error", { status: 500 });
   }
 }
