@@ -22,6 +22,7 @@ export function PDFViewer({ src, title, onClose, citation }: PDFViewerProps) {
   const [pageNumber, setPageNumber] = React.useState(citation?.page || 1);
   const [scale, setScale] = React.useState(1.5);
   const [fullscreen, setFullscreen] = React.useState(false);
+  const [pageDimensions, setPageDimensions] = React.useState({ width: 0, height: 0 });
 
   const onDocumentLoadSuccess = ({ numPages: np }: { numPages: number }) => {
     setNumPages(np);
@@ -39,7 +40,7 @@ export function PDFViewer({ src, title, onClose, citation }: PDFViewerProps) {
   const goToPage = (page: number) => handlePageChange(page);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div className={`fixed inset-0 z-50 flex flex-col bg-background ${fullscreen ? "" : ""}`}>
       <div className="flex items-center justify-between p-4 border-b bg-card">
         <h2 className="text-lg font-semibold truncate max-w-[300px]">{title}</h2>
         <div className="flex items-center gap-2">
@@ -90,8 +91,32 @@ export function PDFViewer({ src, title, onClose, citation }: PDFViewerProps) {
               width={pageNumber ? undefined : 800}
               renderTextLayer={true}
               renderAnnotationLayer={true}
+              onRenderSuccess={(page) => {
+                const vp = page.getViewport({ scale: 1 });
+                setPageDimensions({ width: vp.width, height: vp.height });
+              }}
             />
           </Document>
+
+          {citation?.bbox && pageNumber === citation.page && pageDimensions.width > 0 && (
+            <svg
+              className="absolute inset-0 pointer-events-none"
+              width={pageDimensions.width}
+              height={pageDimensions.height}
+              viewBox={`0 0 ${pageDimensions.width} ${pageDimensions.height}`}
+            >
+              <rect
+                x={citation.bbox[0]}
+                y={citation.bbox[1]}
+                width={citation.bbox[2] - citation.bbox[0]}
+                height={citation.bbox[3] - citation.bbox[1]}
+                fill="rgba(255, 200, 0, 0.25)"
+                stroke="rgba(255, 200, 0, 0.8)"
+                strokeWidth={2}
+                rx={2}
+              />
+            </svg>
+          )}
         </div>
       </div>
     </div>

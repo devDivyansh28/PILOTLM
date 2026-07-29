@@ -31,6 +31,23 @@ export async function createNotebook(title: string) {
   return notebook;
 }
 
+export async function updateNotebook(notebookId: string, data: { title?: string }) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (!user) throw new Error("User not found");
+
+  const notebook = await prisma.notebook.findUnique({ where: { id: notebookId } });
+  if (!notebook) throw new Error("Notebook not found");
+  if (notebook.userId !== user.id) throw new Error("Forbidden");
+
+  return prisma.notebook.update({
+    where: { id: notebookId },
+    data,
+  });
+}
+
 export async function deleteNotebook(notebookId: string) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");

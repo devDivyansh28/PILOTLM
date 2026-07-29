@@ -4,6 +4,9 @@ import React from "react";
 import { PDFViewer } from "./PDFViewer";
 import { YouTubeViewer } from "./YouTubeViewer";
 import { WebsiteViewer } from "./WebsiteViewer";
+import TEXTViewer from "./TEXTViewer";
+import VTTViewer from "./VTTViewer";
+import PPTXViewer from "./PPTXViewer";
 import { Loader2, AlertCircle } from "lucide-react";
 
 interface CitationData {
@@ -24,6 +27,7 @@ interface SourceData {
   name: string;
   url?: string | null;
   filePath?: string | null;
+  chunks?: { content?: string; charRange?: { start: number; end: number } }[];
 }
 
 export function SourceViewerModal({ citation, onClose }: SourceViewerModalProps) {
@@ -74,6 +78,8 @@ export function SourceViewerModal({ citation, onClose }: SourceViewerModalProps)
 
   const src = source.url || source.filePath || "";
   const title = source.name;
+  const content = source.chunks?.[0]?.content;
+  const charRange = citation.location.charRange as { start: number; end: number } | undefined;
 
   switch (source.type) {
     case "PDF":
@@ -83,9 +89,35 @@ export function SourceViewerModal({ citation, onClose }: SourceViewerModalProps)
     case "WEBSITE":
       return <WebsiteViewer src={src} title={title} onClose={onClose} citation={{ charRange: citation.location.charRange as [number, number] }} />;
     case "TEXT":
+      return (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="flex items-center justify-between border-b px-4 py-2">
+            <h2 className="font-semibold">{title}</h2>
+            <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground">Close</button>
+          </div>
+          <TEXTViewer content={content || citation.text} highlightRange={charRange} />
+        </div>
+      );
     case "VTT":
+      return (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="flex items-center justify-between border-b px-4 py-2">
+            <h2 className="font-semibold">{title}</h2>
+            <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground">Close</button>
+          </div>
+          <VTTViewer content={content || citation.text} />
+        </div>
+      );
     case "PPTX":
-      return <PDFViewer src={src} title={title} onClose={onClose} />;
+      return (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="flex items-center justify-between border-b px-4 py-2">
+            <h2 className="font-semibold">{title}</h2>
+            <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground">Close</button>
+          </div>
+          <PPTXViewer content={content || citation.text} />
+        </div>
+      );
     default:
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
