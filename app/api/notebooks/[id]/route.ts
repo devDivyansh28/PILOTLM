@@ -12,7 +12,8 @@ export async function GET(
     const { id } = await params;
     const notebook = await getNotebook(id);
     return Response.json(notebook);
-  } catch (error) {
+  } catch (err) {
+    console.error("Failed to get notebook:", err);
     return new Response("Not found", { status: 404 });
   }
 }
@@ -28,7 +29,8 @@ export async function DELETE(
     const { id } = await params;
     await deleteNotebook(id);
     return Response.json({ success: true });
-  } catch (error) {
+  } catch (err) {
+    console.error("Failed to delete notebook:", err);
     return new Response("Internal server error", { status: 500 });
   }
 }

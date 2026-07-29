@@ -56,8 +56,8 @@ export function ChatInterface({ notebookId, chatId: externalChatId, onChatChange
             citations: m.citations?.map((c) => ({ sourceId: c.sourceId, type: c.type, location: c.location, text: "" })),
           })));
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error("Failed to load messages:", err);
       } finally {
         if (mounted) {
           cancelAnimationFrame(raf);
@@ -166,13 +166,6 @@ export function ChatInterface({ notebookId, chatId: externalChatId, onChatChange
       );
     } finally {
       setStreaming(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
     }
   };
 

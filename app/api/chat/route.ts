@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     });
 
     // Run retrieval synchronously (steps 1-7)
-    const { reranked, contexts } = await runRetrieval(notebookId, query);
+    const { reranked } = await runRetrieval(notebookId, query);
     const contextStr = formatContextForGeneration(reranked);
 
     // Stream generation via SSE
@@ -117,6 +117,7 @@ export async function POST(request: Request) {
           })}\n\n`;
           controller.enqueue(encoder.encode(doneEvent));
         } catch (err) {
+          console.error("Stream generation error:", err);
           const errorEvent = `data: ${JSON.stringify({ type: 'error', message: 'Failed to generate answer' })}\n\n`;
           controller.enqueue(encoder.encode(errorEvent));
         } finally {

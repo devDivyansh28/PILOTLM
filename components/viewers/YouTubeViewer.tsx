@@ -2,9 +2,8 @@
 
 import React from "react";
 import ReactPlayer from "react-player";
-import { X, Maximize2, Minimize2, ExternalLink } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface YouTubeViewerProps {
@@ -17,7 +16,7 @@ interface YouTubeViewerProps {
 }
 
 export function YouTubeViewer({ src, title, onClose, citation }: YouTubeViewerProps) {
-  const [fullscreen, setFullscreen] = React.useState(false);
+  const [fullscreen] = React.useState(false);
 
   React.useEffect(() => {
     if (citation?.timestamp) {

@@ -1,13 +1,11 @@
 "use client";
 
 import React from "react";
-import { Upload, FileText, Video, Globe, FileVideo, Presentation, File, X, Loader2 } from "lucide-react";
+import { FileText, Video, Globe, FileVideo, Presentation, File, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +59,7 @@ export function SourceUploader({ notebookId, onClose }: SourceUploaderProps) {
         } else {
           throw new Error("Upload failed");
         }
-      } catch (e) {
+      } catch {
         setError("Failed to add URL source");
       } finally {
         setUploading(false);
@@ -123,7 +121,7 @@ export function SourceUploader({ notebookId, onClose }: SourceUploaderProps) {
         } else {
           throw new Error("Failed to complete upload");
         }
-      } catch (e) {
+      } catch {
         setError("Upload failed. Please try again.");
       } finally {
         setUploading(false);
