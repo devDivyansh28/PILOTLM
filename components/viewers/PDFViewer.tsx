@@ -1,10 +1,8 @@
 "use client";
 
 import React from "react";
-import { X, Maximize2, Minimize2, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut } from "lucide-react";
+import { X, Maximize2, Minimize2, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { Document, Page, pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
@@ -22,7 +20,7 @@ interface PDFViewerProps {
 export function PDFViewer({ src, title, onClose, citation }: PDFViewerProps) {
   const [numPages, setNumPages] = React.useState<number | null>(null);
   const [pageNumber, setPageNumber] = React.useState(citation?.page || 1);
-  const [scale, setScale] = React.useState(1.5);
+  const [scale] = React.useState(1.5);
   const [fullscreen, setFullscreen] = React.useState(false);
 
   const onDocumentLoadSuccess = ({ numPages: np }: { numPages: number }) => {

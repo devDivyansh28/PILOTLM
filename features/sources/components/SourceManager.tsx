@@ -3,7 +3,7 @@
 import React from "react";
 import { Upload, RefreshCw, Trash2, MoreHorizontal, FileText, Video, Globe, FileVideo, Presentation, File } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -12,7 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
 import { SourceUploader } from "./SourceUploader";
 
 interface SourceManagerProps {

@@ -1,9 +1,7 @@
 "use client";
 
-import { FileText, Video, Globe, FileVideo, Presentation, File, ExternalLink, Copy } from "lucide-react";
+import { FileText, Video, Globe, FileVideo, Presentation, File, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 interface CitationChipProps {
   citation: {
@@ -27,10 +25,6 @@ const typeIcons: Record<string, React.ReactNode> = {
 };
 
 export function CitationChip({ citation, index, onClick }: CitationChipProps) {
-  const locationText = Object.entries(citation.location)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(", ");
-
   return (
     <Badge
       variant="outline"

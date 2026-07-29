@@ -3,7 +3,6 @@
 import React from "react";
 import { X, Maximize2, Minimize2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface WebsiteViewerProps {
@@ -15,7 +14,7 @@ interface WebsiteViewerProps {
   };
 }
 
-export function WebsiteViewer({ src, title, onClose, citation }: WebsiteViewerProps) {
+export function WebsiteViewer({ src, title, onClose }: WebsiteViewerProps) {
   const [fullscreen, setFullscreen] = React.useState(false);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 

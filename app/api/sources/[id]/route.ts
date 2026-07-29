@@ -21,7 +21,8 @@ export async function GET(
 
     if (!source) return new Response("Not found", { status: 404 });
     return Response.json(source);
-  } catch (error) {
+  } catch (err) {
+    console.error("Failed to get source:", err);
     return new Response("Internal server error", { status: 500 });
   }
 }
@@ -55,7 +56,8 @@ export async function DELETE(
 
     await prisma.source.delete({ where: { id } });
     return Response.json({ success: true });
-  } catch (error) {
+  } catch (err) {
+    console.error("Failed to delete source:", err);
     return new Response("Internal server error", { status: 500 });
   }
 }
@@ -134,7 +136,8 @@ export async function PATCH(
     }
 
     return new Response("Invalid action", { status: 400 });
-  } catch (error) {
+  } catch (err) {
+    console.error("Failed to patch source:", err);
     return new Response("Internal server error", { status: 500 });
   }
 }

@@ -8,7 +8,8 @@ export async function GET() {
   try {
     const notebooks = await listNotebooks();
     return Response.json(notebooks);
-  } catch (error) {
+  } catch (err) {
+    console.error("Failed to list notebooks:", err);
     return new Response("Internal server error", { status: 500 });
   }
 }
@@ -24,7 +25,8 @@ export async function POST(request: Request) {
 
     const notebook = await createNotebook(title.trim());
     return Response.json(notebook);
-  } catch (error) {
+  } catch (err) {
+    console.error("Failed to create notebook:", err);
     return new Response("Internal server error", { status: 500 });
   }
 }

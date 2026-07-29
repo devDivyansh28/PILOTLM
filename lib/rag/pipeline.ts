@@ -124,7 +124,8 @@ async function decomposeQuery(query: string): Promise<string[]> {
   try {
     const parsed = JSON.parse(response.content as string);
     return Array.isArray(parsed) ? parsed : [query];
-  } catch {
+  } catch (err) {
+    console.warn("Failed to parse decomposed query, falling back to original:", err);
     return [query];
   }
 }

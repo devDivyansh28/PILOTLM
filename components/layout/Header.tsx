@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Sun, Moon, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 

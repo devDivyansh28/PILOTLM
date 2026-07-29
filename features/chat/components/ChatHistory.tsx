@@ -34,8 +34,8 @@ export function ChatHistory({ notebookId, activeChatId, onSelectChat, onNewChat 
         if (res.ok && mounted) {
           setChats(await res.json());
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error("Failed to fetch chats:", err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -57,8 +57,8 @@ export function ChatHistory({ notebookId, activeChatId, onSelectChat, onNewChat 
         setChats((prev) => prev.map((c) => c.id === chatId ? { ...c, title: editTitle.trim() } : c));
         setEditingId(null);
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("Failed to rename chat:", err);
     }
   };
 
@@ -70,8 +70,8 @@ export function ChatHistory({ notebookId, activeChatId, onSelectChat, onNewChat 
         setChats((prev) => prev.filter((c) => c.id !== chatId));
         if (activeChatId === chatId) onNewChat();
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("Failed to delete chat:", err);
     }
   };
 
