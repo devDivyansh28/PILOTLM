@@ -119,6 +119,12 @@ reranker:
     topN: 10
     apiKeyEnv: COHERE_API_KEY
 
+# Ingestion Configuration
+ingestion:
+  chunking:
+    chunkSize: 1000
+    chunkOverlap: 200
+
 # RAG Pipeline Step Configuration
 rag:
   queryRewrite:

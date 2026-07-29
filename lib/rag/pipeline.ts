@@ -1,5 +1,6 @@
 import { createLLM } from '@/lib/providers/llm';
 import { createEmbeddings } from '@/lib/providers/embeddings';
+import { getRAGConfig } from '@/lib/providers/registry';
 import { searchPoints, getCollectionName } from '@/lib/vector/qdrant';
 import { rerank } from '@/lib/providers/reranker';
 import { formatPrompt, RAG_PROMPTS } from './prompts';
@@ -38,11 +39,12 @@ export async function runRetrieval(
   contexts: RAGContext[];
   contextStr: string;
 }> {
+  const ragConfig = getRAGConfig();
   const {
-    k = 50,
-    scoreThreshold = 0.5,
-    rrfK = 60,
-    rerankTopN = 10,
+    k = ragConfig.retrieval.k,
+    scoreThreshold = ragConfig.retrieval.scoreThreshold,
+    rrfK = ragConfig.rrf.k,
+    rerankTopN = ragConfig.rerank.topN,
   } = options;
 
   const rewrittenQuery = await rewriteQuery(query);
