@@ -159,7 +159,7 @@ function CreateNotebookForm() {
       if (res.ok) {
         const notebook = await res.json();
         setTitle("");
-        window.location.href = `/dashboard/notebooks/${notebook.id}`;
+        window.location.href = `/notebooks/${notebook.id}`;
       }
     } catch (error) {
       console.error("Failed to create notebook:", error);

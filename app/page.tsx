@@ -1,12 +1,10 @@
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import { UserButton } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 
-export default function Home() {
-  return (
-    <div >
-    <h1> Hello world</h1>
-    <ModeToggle/>
-    <UserButton/>
-    </div>
-  );
+export default async function Home() {
+  const { userId } = await auth();
+  if (userId) {
+    redirect("/notebooks");
+  }
+  redirect("/sign-in");
 }

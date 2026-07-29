@@ -3,7 +3,7 @@ import { createEmbeddings } from '@/lib/providers/embeddings';
 import { getRAGConfig } from '@/lib/providers/registry';
 import { searchPoints, getCollectionName } from '@/lib/vector/qdrant';
 import { rerank } from '@/lib/providers/reranker';
-import { formatPrompt, RAG_PROMPTS } from './prompts';
+import { formatPrompt, getRAGStepPrompt } from './prompts';
 import { ReciprocalRankFusion } from './rrf';
 
 export interface RAGContext {
@@ -107,21 +107,21 @@ export async function runRAGPipeline(
 
 async function rewriteQuery(query: string): Promise<string> {
   const llm = createLLM();
-  const prompt = formatPrompt(RAG_PROMPTS.queryRewrite, { query });
+  const prompt = formatPrompt(getRAGStepPrompt("queryRewrite"), { query });
   const response = await llm.invoke(prompt);
   return response.content as string;
 }
 
 async function stepBackPrompt(query: string): Promise<string> {
   const llm = createLLM();
-  const prompt = formatPrompt(RAG_PROMPTS.stepBack, { query });
+  const prompt = formatPrompt(getRAGStepPrompt("stepBack"), { query });
   const response = await llm.invoke(prompt);
   return response.content as string;
 }
 
 async function decomposeQuery(query: string): Promise<string[]> {
   const llm = createLLM();
-  const prompt = formatPrompt(RAG_PROMPTS.subQueryDecomposition, { query });
+  const prompt = formatPrompt(getRAGStepPrompt("subQueryDecomposition"), { query });
   const response = await llm.invoke(prompt);
   try {
     const parsed = JSON.parse(response.content as string);
@@ -134,7 +134,7 @@ async function decomposeQuery(query: string): Promise<string[]> {
 
 async function generateHyDE(query: string): Promise<string> {
   const llm = createLLM();
-  const prompt = formatPrompt(RAG_PROMPTS.hyde, { query });
+  const prompt = formatPrompt(getRAGStepPrompt("hyde"), { query });
   const response = await llm.invoke(prompt);
   return response.content as string;
 }
@@ -186,7 +186,7 @@ async function generateAnswer(
   const llm = createLLM();
 
   const contextStr = formatContextForGeneration(contexts);
-  const prompt = formatPrompt(RAG_PROMPTS.generation, {
+  const prompt = formatPrompt(getRAGStepPrompt("generation"), {
     context: contextStr,
     query,
   });

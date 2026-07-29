@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { runRetrieval, formatContextForGeneration, extractCitationsFromAnswer } from '@/lib/rag/pipeline';
 import { createLLM } from '@/lib/providers/llm';
-import { formatPrompt, RAG_PROMPTS } from '@/lib/rag/prompts';
+import { formatPrompt, getRAGStepPrompt } from '@/lib/rag/prompts';
 import { Prisma } from '@/lib/generated/prisma/client';
 
 export const runtime = 'nodejs';
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       async start(controller) {
         try {
           const llm = createLLM();
-          const prompt = formatPrompt(RAG_PROMPTS.generation, {
+          const prompt = formatPrompt(getRAGStepPrompt("generation"), {
             context: contextStr,
             query,
           });

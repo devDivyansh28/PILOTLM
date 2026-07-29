@@ -252,7 +252,10 @@ export function createIngestionWorker() {
   return worker;
 }
 
-if (require.main === module) {
+const isMainModule = process.argv[1]?.replace(/\\/g, '/').endsWith('worker.ts') ||
+  process.argv[1]?.replace(/\\/g, '/').endsWith('worker.js');
+
+if (isMainModule) {
   console.log('[Worker] Starting ingestion worker...');
   createIngestionWorker();
   console.log('[Worker] Worker started');

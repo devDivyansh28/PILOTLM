@@ -44,7 +44,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
       >
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center px-4 border-b">
-            <Link href="/dashboard/notebooks" className="flex items-center gap-2 font-semibold text-lg">
+            <Link href="/notebooks" className="flex items-center gap-2 font-semibold text-lg">
               <LayoutDashboard className="h-5 w-5 text-primary" />
               <span>PilotLM</span>
             </Link>
@@ -121,7 +121,7 @@ function CreateNotebookForm({ onClose }: { onClose: () => void }) {
         const notebook = await res.json();
         setTitle("");
         onClose();
-        window.location.href = `/dashboard/notebooks/${notebook.id}`;
+        window.location.href = `/notebooks/${notebook.id}`;
       }
     } catch (error) {
       console.error("Failed to create notebook:", error);
