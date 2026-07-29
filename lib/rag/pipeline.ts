@@ -24,6 +24,70 @@ export interface RAGResult {
   contexts: RAGContext[];
 }
 
+export async function runRetrieval(
+  notebookId: string,
+  query: string,
+  options: {
+    k?: number;
+    scoreThreshold?: number;
+    rrfK?: number;
+    rerankTopN?: number;
+  } = {}
+): Promise<{
+  reranked: Array<{ id: string; score: number; payload: Record<string, unknown> }>;
+  contexts: RAGContext[];
+  contextStr: string;
+}> {
+  const {
+    k = 50,
+    scoreThreshold = 0.5,
+    rrfK = 60,
+    rerankTopN = 10,
+  } = options;
+
+  const rewrittenQuery = await rewriteQuery(query);
+  const stepBackQuery = await stepBackPrompt(rewrittenQuery);
+  const subQueries = await decomposeQuery(rewrittenQuery);
+  const hydeDoc = await generateHyDE(rewrittenQuery);
+
+  const allQueries = [rewrittenQuery, stepBackQuery, ...subQueries, hydeDoc];
+  const retrievalResults = await parallelRetrieval(notebookId, allQueries, { k, scoreThreshold });
+
+  const fusedResults = ReciprocalRankFusion(retrievalResults, rrfK);
+  const reranked = await rerankResults(query, fusedResults, rerankTopN);
+
+  const contexts: RAGContext[] = reranked.map((c) => ({
+    content: c.payload.content as string,
+    sourceId: c.payload.sourceId as string,
+    sourceType: c.payload.sourceType as string,
+    location: (c.payload.charRange || c.payload.timestamp || c.payload.page || {}) as Record<string, unknown>,
+    score: c.score,
+  }));
+
+  const contextStr = formatContextForGeneration(reranked);
+
+  return { reranked, contexts, contextStr };
+}
+
+export function formatContextForGeneration(
+  contexts: Array<{ id: string; score: number; payload: Record<string, unknown> }>
+): string {
+  const blocks = contexts.map((ctx, idx) => {
+    const sourceId = ctx.payload.sourceId;
+    const sourceType = ctx.payload.sourceType || 'unknown';
+    const location = ctx.payload.charRange || ctx.payload.timestamp || ctx.payload.page || {};
+    return `[source_${idx}] Source: ${sourceId} (${sourceType}) Location: ${JSON.stringify(location)}\nContent: ${ctx.payload.content}`;
+  });
+  return blocks.join('\n\n---\n\n');
+}
+
+export function extractCitationsFromAnswer(
+  answer: string,
+  contexts: Array<{ id: string; score: number; payload: Record<string, unknown> }>
+): RAGResult['citations'] {
+  return extractCitations(answer, contexts);
+}
+
 export async function runRAGPipeline(
   notebookId: string,
   query: string,
@@ -34,38 +98,8 @@ export async function runRAGPipeline(
     rerankTopN?: number;
   } = {}
 ): Promise<RAGResult> {
-  const {
-    k = 50,
-    scoreThreshold = 0.5,
-    rrfK = 60,
-    rerankTopN = 10,
-  } = options;
-
-  // Step 1: Query Rewrite
-  const rewrittenQuery = await rewriteQuery(query);
-
-  // Step 2: Step-Back Prompting
-  const stepBackQuery = await stepBackPrompt(rewrittenQuery);
-
-  // Step 3: Sub-Query Decomposition
-  const subQueries = await decomposeQuery(rewrittenQuery);
-
-  // Step 4: HyDE (Hypothetical Document Embedding)
-  const hydeDoc = await generateHyDE(rewrittenQuery);
-
-  // Step 5: Parallel Retrieval for all queries
-  const allQueries = [rewrittenQuery, stepBackQuery, ...subQueries, hydeDoc];
-  const retrievalResults = await parallelRetrieval(notebookId, allQueries, { k, scoreThreshold });
-
-  // Step 6: Reciprocal Rank Fusion
-  const fusedResults = ReciprocalRankFusion(retrievalResults, rrfK);
-
-  // Step 7: Rerank
-  const reranked = await rerankResults(query, fusedResults, rerankTopN);
-
-  // Step 8: Generate Answer with Citations
-  const result = await generateAnswer(query, reranked);
-
+  const { reranked, contexts } = await runRetrieval(notebookId, query, options);
+  const result = await generateAnswer(query, reranked, contexts);
   return result;
 }
 
@@ -143,18 +177,12 @@ async function rerankResults(
 
 async function generateAnswer(
   query: string,
-  contexts: Array<{ id: string; score: number; payload: Record<string, unknown> }>
+  contexts: Array<{ id: string; score: number; payload: Record<string, unknown> }>,
+  prebuiltContexts?: RAGContext[]
 ): Promise<RAGResult> {
   const llm = createLLM();
 
-  const contextBlocks = contexts.map((ctx, idx) => {
-    const sourceId = ctx.payload.sourceId;
-    const sourceType = ctx.payload.sourceType || 'unknown';
-    const location = ctx.payload.charRange || ctx.payload.timestamp || ctx.payload.page || {};
-    return `[source_${idx}] Source: ${sourceId} (${sourceType}) Location: ${JSON.stringify(location)}\nContent: ${ctx.payload.content}`;
-  });
-
-  const contextStr = contextBlocks.join('\n\n---\n\n');
+  const contextStr = formatContextForGeneration(contexts);
   const prompt = formatPrompt(RAG_PROMPTS.generation, {
     context: contextStr,
     query,
@@ -163,13 +191,12 @@ async function generateAnswer(
   const response = await llm.invoke(prompt);
   const answer = response.content as string;
 
-  // Extract citations from answer
   const citations = extractCitations(answer, contexts);
 
   return {
     answer,
     citations,
-    contexts: contexts.map((c) => ({
+    contexts: prebuiltContexts || contexts.map((c) => ({
       content: c.payload.content as string,
       sourceId: c.payload.sourceId as string,
       sourceType: c.payload.sourceType as string,

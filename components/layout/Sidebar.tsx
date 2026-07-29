@@ -23,9 +23,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   const { user } = useUser();
 
   const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Notebooks", href: "/dashboard/notebooks", icon: FolderOpen },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+    { name: "Notebooks", href: "/notebooks", icon: FolderOpen },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (
@@ -60,7 +59,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                 onClick={onClose}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                  pathname === item.href
+                  pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}

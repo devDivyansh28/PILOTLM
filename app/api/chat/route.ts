@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
-import { runRAGPipeline } from '@/lib/rag/pipeline';
+import { runRetrieval, formatContextForGeneration, extractCitationsFromAnswer } from '@/lib/rag/pipeline';
+import { createLLM } from '@/lib/providers/llm';
+import { formatPrompt, RAG_PROMPTS } from '@/lib/rag/prompts';
 import { Prisma } from '@/lib/generated/prisma/client';
 
 export const runtime = 'nodejs';
@@ -19,7 +21,6 @@ export async function POST(request: Request) {
       return new Response('Missing notebookId or query', { status: 400 });
     }
 
-    // Verify user owns the notebook
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) {
       return new Response('User not found', { status: 404 });
@@ -33,7 +34,6 @@ export async function POST(request: Request) {
       return new Response('Notebook not found or access denied', { status: 403 });
     }
 
-    // Get or create chat
     let chat;
     if (chatId) {
       chat = await prisma.chat.findUnique({ where: { id: chatId } });
@@ -49,7 +49,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // Save user message
     await prisma.message.create({
       data: {
         chatId: chat.id,
@@ -58,35 +57,81 @@ export async function POST(request: Request) {
       },
     });
 
-    // Run RAG pipeline
-    const ragResult = await runRAGPipeline(notebookId, query);
+    // Run retrieval synchronously (steps 1-7)
+    const { reranked, contexts } = await runRetrieval(notebookId, query);
+    const contextStr = formatContextForGeneration(reranked);
 
-    // Save assistant message with citations
-    const assistantMessage = await prisma.message.create({
-      data: {
-        chatId: chat.id,
-        role: 'assistant',
-        content: ragResult.answer,
-        citations: {
-          create: ragResult.citations.map((c) => ({
-            sourceId: c.sourceId,
-            type: c.sourceType,
-            location: c.location as Prisma.InputJsonValue,
-          })),
-        },
+    // Stream generation via SSE
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const llm = createLLM();
+          const prompt = formatPrompt(RAG_PROMPTS.generation, {
+            context: contextStr,
+            query,
+          });
+
+          let fullAnswer = '';
+          const stream_ = await llm.stream(prompt);
+
+          for await (const chunk of stream_) {
+            const content = typeof chunk.content === 'string' ? chunk.content : '';
+            if (content) {
+              fullAnswer += content;
+              const event = `data: ${JSON.stringify({ type: 'token', content })}\n\n`;
+              controller.enqueue(encoder.encode(event));
+            }
+          }
+
+          // Extract citations from complete answer
+          const citations = extractCitationsFromAnswer(fullAnswer, reranked);
+
+          // Save assistant message with citations
+          const assistantMessage = await prisma.message.create({
+            data: {
+              chatId: chat.id,
+              role: 'assistant',
+              content: fullAnswer,
+              citations: {
+                create: citations.map((c) => ({
+                  sourceId: c.sourceId,
+                  type: c.sourceType,
+                  location: c.location as Prisma.InputJsonValue,
+                })),
+              },
+            },
+            include: { citations: true },
+          });
+
+          const doneEvent = `data: ${JSON.stringify({
+            type: 'done',
+            chatId: chat.id,
+            messageId: assistantMessage.id,
+            citations: citations.map((c) => ({
+              sourceId: c.sourceId,
+              type: c.sourceType,
+              location: c.location,
+              text: c.text,
+            })),
+          })}\n\n`;
+          controller.enqueue(encoder.encode(doneEvent));
+        } catch (err) {
+          const errorEvent = `data: ${JSON.stringify({ type: 'error', message: 'Failed to generate answer' })}\n\n`;
+          controller.enqueue(encoder.encode(errorEvent));
+        } finally {
+          controller.close();
+        }
       },
-      include: { citations: true },
     });
 
-    // Return response with citations
-    const response = {
-      chatId: chat.id,
-      messageId: assistantMessage.id,
-      answer: ragResult.answer,
-      citations: ragResult.citations,
-    };
-
-    return Response.json(response);
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('Chat API error:', error);
     return new Response('Internal server error', { status: 500 });
