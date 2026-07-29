@@ -1,20 +1,20 @@
 import { auth } from "@clerk/nextjs/server";
 import { deleteNotebook, getNotebook } from "@/features/notebooks/action/notebook-actions";
+import { ok, unauthorized, notFound, serverError } from "@/lib/api-utils";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId) return unauthorized();
 
   try {
     const { id } = await params;
     const notebook = await getNotebook(id);
-    return Response.json(notebook);
-  } catch (err) {
-    console.error("Failed to get notebook:", err);
-    return new Response("Not found", { status: 404 });
+    return ok(notebook);
+  } catch {
+    return notFound("Notebook not found");
   }
 }
 
@@ -23,14 +23,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId) return unauthorized();
 
   try {
     const { id } = await params;
     await deleteNotebook(id);
-    return Response.json({ success: true });
+    return ok({ success: true });
   } catch (err) {
-    console.error("Failed to delete notebook:", err);
-    return new Response("Internal server error", { status: 500 });
+    return serverError(err);
   }
 }
