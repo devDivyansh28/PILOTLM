@@ -2,19 +2,16 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
-import { getSignedUploadUrl } from "@/lib/storage/imagekit";
+import { getUploadAuthParams } from "@/lib/storage/imagekit";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { SourceType, SourceStatus } from "@/lib/generated/prisma/enums";
 import { ingestionQueue } from "@/lib/queue";
 
-export async function getUploadUrl(fileName: string) {
+export async function getUploadUrl() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  const folder = `/sources/${userId}`;
-  const { signedUrl, expire, token } = getSignedUploadUrl(fileName, folder);
-
-  return { signedUrl, expire, token, folder };
+  return { ...getUploadAuthParams(), folder: `/sources/${userId}` };
 }
 
 export async function createSource(

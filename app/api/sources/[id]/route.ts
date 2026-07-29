@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
-import { getSignedUploadUrl, deleteFile } from "@/lib/storage/imagekit";
+import { getUploadAuthParams, deleteFile } from "@/lib/storage/imagekit";
 import { deletePoints } from "@/lib/vector/qdrant";
 import { ingestionQueue } from "@/lib/queue";
 import { SourceStatus } from "@/lib/generated/prisma/enums";
@@ -102,14 +102,8 @@ export async function PATCH(
     }
 
     if (action === "getUploadUrl") {
-      const { fileName } = body;
-      if (!fileName) return new Response("fileName required", { status: 400 });
-
-      const source = await prisma.source.findUnique({ where: { id } });
-      if (!source) return new Response("Not found", { status: 404 });
-
-      const { signedUrl, expire, token } = getSignedUploadUrl(fileName, `/sources/${source.notebookId}`);
-      return Response.json({ signedUrl, expire, token });
+      const authParams = getUploadAuthParams();
+      return Response.json(authParams);
     }
 
     if (action === "completeUpload") {
